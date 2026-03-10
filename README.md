@@ -11,6 +11,12 @@
 ⚙️ Tech Stack Frontend • React 18 • React Router • TailwindCSS • Recharts • Lucide React Icons Backend • Python • Flask • SQLAlchemy Machine Learning • TensorFlow / Keras (LSTM) • Scikit-learn • Pandas • NumPy Database • SQLite (development) • PostgreSQL (production) • Redis (caching) APIs • RESTful APIs • Maps & Traffic APIs
 
 🧠 Machine Learning Workflow 1️⃣ Data Collection Traffic datasets and parking data are collected. 2️⃣ Data Processing Cleaning, feature extraction, and normalization. 3️⃣ Model Training LSTM models are trained on time-series traffic patterns. 4️⃣ Prediction The system predicts: • hourly traffic congestion • best departure times • parking availability
+![WhatsApp Image 2026-03-10 at 10 45 52 PM](https://github.com/user-attachments/assets/df3c093f-dbcd-4a98-aa9a-7ebcdecfc34d)
+![WhatsApp Image 2026-03-10 at 10 45 54 PM](https://github.com/user-attachments/assets/4fd49a93-1d27-4baf-8549-f07fae40d457)
+![WhatsApp Image 2026-03-10 at 10 45 58 PM](https://github.com/user-attachments/assets/77c20303-d45f-4727-9989-cc8c79269c6d)
+
+
+
 
 🛠 Installation Guide Clone Repository git clone https://github.com/Anisca-hub/TechDiva-s_AIML_Horizon26 cd urbanflow-ai Backend Setup cd backend python -m venv venv source venv/bin/activate pip install -r requirements.txt python run.py
 
