@@ -84,7 +84,7 @@ The system predicts:
 
 🛠 Installation Guide
 Clone Repository
-git clone https://github.com/yourusername/urbanflow-ai.git
+git clone https://github.com/Anisca-hub/TechDiva-s_AIML_Horizon26
 cd urbanflow-ai
 Backend Setup
 cd backend
@@ -126,6 +126,10 @@ UrbanFlow AI helps:
 
 🤝 Contributors
 Team Members:
+Pranali Bamne
+SakshiBhaingade
+Anisca-hub
+Siddhi4503
 
 ⭐ If you like this project, please star the repository!
 
