@@ -126,9 +126,9 @@ UrbanFlow AI helps:
 
 🤝 Contributors
 Team Members:
-Pranali Bamne
-SakshiBhaingade
 Anisca-hub
+SakshiBhaingade
+Pranali Bamne
 Siddhi4503
 
 ⭐ If you like this project, please star the repository!
