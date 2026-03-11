@@ -41,3 +41,6 @@ Frontend Setup cd frontend npm install npm start Frontend runs at: http://localh
 
 ⭐ If you like this project, please star the repository!
 
+<img width="1876" height="869" alt="image" src="https://github.com/user-attachments/assets/33d05c55-2ebe-44a6-9702-54b76382ba6a" />
+
+
