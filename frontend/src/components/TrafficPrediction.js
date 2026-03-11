@@ -14,6 +14,9 @@ const TrafficPrediction = () => {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [selectedTime, setSelectedTime] = useState('now');
+  const [prediction, setPrediction] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const predictionData = [
     { time: '8:00', traffic: 65, predicted: 62 },
@@ -68,9 +71,41 @@ const TrafficPrediction = () => {
     }
   };
 
-  const handlePredict = () => {
-    // API call would go here
-    console.log('Predicting traffic for', { origin, destination, selectedTime });
+  const handlePredict = async () => {
+    if (!origin || !destination) {
+      setError('Please enter both origin and destination');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setPrediction(null);
+
+    try {
+      const response = await fetch('http://localhost:8000/api/ml/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model_type: 'traffic',
+          origin: origin,
+          destination: destination,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setPrediction(data.prediction);
+    } catch (err) {
+      console.error('Prediction error:', err);
+      setError('Failed to get traffic prediction. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -137,13 +172,67 @@ const TrafficPrediction = () => {
           <div className="flex items-end">
             <button
               onClick={handlePredict}
-              className="w-full btn-primary flex items-center justify-center"
+              disabled={loading}
+              className="w-full btn-primary flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Search className="h-4 w-4 mr-2" />
-              Predict Traffic
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Predicting...
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4 mr-2" />
+                  Predict Traffic
+                </>
+              )}
             </button>
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
+              <span className="text-red-700">{error}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Prediction Results */}
+        {prediction && (
+          <div className="mt-6 p-6 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center mb-4">
+              <TrendingUp className="h-6 w-6 text-green-600 mr-2" />
+              <h3 className="text-lg font-semibold text-green-800">Traffic Prediction Results</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white p-4 rounded-lg border">
+                <div className="text-sm text-gray-600">Traffic Level</div>
+                <div className="text-2xl font-bold text-blue-600">{prediction.traffic_level}/10</div>
+                <div className="text-xs text-gray-500">Scale: 1-10 (1=Very Light, 10=Very Heavy)</div>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg border">
+                <div className="text-sm text-gray-600">Estimated Time</div>
+                <div className="text-2xl font-bold text-green-600">{prediction.estimated_travel_time} min</div>
+                <div className="text-xs text-gray-500">{prediction.congestion} traffic</div>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg border">
+                <div className="text-sm text-gray-600">Weather</div>
+                <div className="text-lg font-bold text-purple-600">{prediction.weather_impact}</div>
+                <div className="text-xs text-gray-500">{prediction.explanation}</div>
+              </div>
+            </div>
+
+            <div className="mt-4 text-sm text-gray-600">
+              <strong>Route:</strong> {origin} → {destination}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Traffic Forecast Chart */}

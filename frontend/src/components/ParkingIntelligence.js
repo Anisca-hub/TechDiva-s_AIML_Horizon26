@@ -8,13 +8,17 @@ import {
   Navigation,
   Star,
   Shield,
-  Zap
+  Zap,
+  AlertTriangle
 } from 'lucide-react';
 
 const ParkingIntelligence = () => {
   const [destination, setDestination] = useState('');
   const [parkingType, setParkingType] = useState('all');
   const [maxDistance, setMaxDistance] = useState('500');
+  const [prediction, setPrediction] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const parkingSpots = [
     {
@@ -86,9 +90,44 @@ const ParkingIntelligence = () => {
     return 'Low';
   };
 
-  const handleSearch = () => {
-    // API call would go here
-    console.log('Searching parking for', { destination, parkingType, maxDistance });
+  const handleSearch = async () => {
+    if (!destination) {
+      setError('Please enter a destination');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setPrediction(null);
+
+    try {
+      const response = await fetch('http://localhost:8000/api/ml/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model_type: 'parking',
+          location: destination,
+          search_radius: parseFloat(maxDistance) / 1000, // Convert meters to km
+          // Optional: Add more features if available
+          // vehicle_type: parkingType,
+          // etc.
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setPrediction(data.prediction);
+    } catch (err) {
+      console.error('Parking prediction error:', err);
+      setError('Failed to get parking prediction. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -158,13 +197,67 @@ const ParkingIntelligence = () => {
           <div className="flex items-end">
             <button
               onClick={handleSearch}
-              className="w-full btn-primary flex items-center justify-center"
+              disabled={loading}
+              className="w-full btn-primary flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Search className="h-4 w-4 mr-2" />
-              Search Parking
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Searching...
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4 mr-2" />
+                  Find Parking
+                </>
+              )}
             </button>
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
+              <span className="text-red-700">{error}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Prediction Results */}
+        {prediction && (
+          <div className="mt-6 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center mb-4">
+              <Car className="h-6 w-6 text-blue-600 mr-2" />
+              <h3 className="text-lg font-semibold text-blue-800">Parking Prediction Results</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white p-4 rounded-lg border">
+                <div className="text-sm text-gray-600">Available Spots</div>
+                <div className="text-2xl font-bold text-green-600">{prediction.available_spots}</div>
+                <div className="text-xs text-gray-500">Estimated parking spaces</div>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg border">
+                <div className="text-sm text-gray-600">Occupancy Rate</div>
+                <div className="text-2xl font-bold text-orange-600">{Math.round(prediction.occupancy_rate * 100)}%</div>
+                <div className="text-xs text-gray-500">Current utilization</div>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg border">
+                <div className="text-sm text-gray-600">Confidence</div>
+                <div className="text-2xl font-bold text-purple-600">{Math.round(prediction.confidence * 100)}%</div>
+                <div className="text-xs text-gray-500">Prediction reliability</div>
+              </div>
+            </div>
+
+            <div className="mt-4 text-sm text-gray-600">
+              <strong>Location:</strong> {destination} | <strong>Model:</strong> {prediction.model_used || 'Random Forest'}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Parking Availability Forecast */}

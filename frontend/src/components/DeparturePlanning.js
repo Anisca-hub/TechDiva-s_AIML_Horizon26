@@ -7,6 +7,7 @@ import {
   Car,
   CheckCircle,
   AlertCircle,
+  AlertTriangle,
   Info
 } from 'lucide-react';
 
@@ -15,6 +16,9 @@ const DeparturePlanning = () => {
   const [arrivalTime, setArrivalTime] = useState('09:00');
   const [preferredDeparture, setPreferredDeparture] = useState('earliest');
   const [transportMode, setTransportMode] = useState('car');
+  const [prediction, setPrediction] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const departureRecommendations = [
     {
@@ -74,9 +78,41 @@ const DeparturePlanning = () => {
     }
   };
 
-  const handlePlanDeparture = () => {
-    // API call would go here
-    console.log('Planning departure for', { destination, arrivalTime, preferredDeparture, transportMode });
+  const handlePlanDeparture = async () => {
+    if (!destination) {
+      setError('Please enter a destination');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setPrediction(null);
+
+    try {
+      const response = await fetch('http://localhost:8000/api/ml/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model_type: 'traffic',
+          origin: 'Current Location',
+          destination: destination,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to get recommendations`);
+      }
+
+      const data = await response.json();
+      setPrediction(data.prediction);
+    } catch (err) {
+      console.error('Departure planning error:', err);
+      setError('Failed to get departure recommendations. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -158,20 +194,77 @@ const DeparturePlanning = () => {
         
         <button
           onClick={handlePlanDeparture}
-          className="btn-primary"
+          disabled={loading}
+          className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Get Recommendations
+          {loading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white inline-block mr-2"></div>
+              Getting Recommendations...
+            </>
+          ) : (
+            'Get Recommendations'
+          )}
         </button>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
+              <span className="text-red-700">{error}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Departure Recommendations */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Recommended Departure Times</h2>
-          <Info className="h-5 w-5 text-gray-400" />
+      {prediction ? (
+        <div className="card">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Your Departure Plan</h2>
+            <CheckCircle className="h-5 w-5 text-green-600" />
+          </div>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Destination</p>
+                <p className="text-lg font-bold text-gray-900">{destination}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Traffic Level</p>
+                <p className="text-lg font-bold text-blue-600">{prediction.traffic_level}/10</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Est. Travel Time</p>
+                <p className="text-lg font-bold text-green-600">{prediction.estimated_travel_time} min</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Congestion</p>
+                <p className="text-lg font-bold text-purple-600">{prediction.congestion}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-6">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Recommendations:</h3>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li>✓ Based on current traffic: <strong>{prediction.congestion}</strong></li>
+              <li>✓ Estimated travel time: <strong>{prediction.estimated_travel_time} minutes</strong></li>
+              <li>✓ Weather: <strong>{prediction.weather_impact}</strong></li>
+              <li>✓ Insight: {prediction.explanation}</li>
+            </ul>
+          </div>
         </div>
-        
-        <div className="space-y-4">
+      ) : (
+        <div className="card">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Recommended Departure Times</h2>
+            <Info className="h-5 w-5 text-gray-400" />
+          </div>
+          
+          <div className="space-y-4">
           {departureRecommendations.map((rec, index) => (
             <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-3">
@@ -224,8 +317,10 @@ const DeparturePlanning = () => {
           ))}
         </div>
       </div>
+      )}
 
       {/* Weekly Pattern Analysis */}
+      {!prediction && (
       <div className="card">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900">Weekly Traffic Pattern</h2>
@@ -256,6 +351,7 @@ const DeparturePlanning = () => {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 };
